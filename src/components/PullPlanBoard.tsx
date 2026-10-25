@@ -399,21 +399,21 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#0066B3]" />
                 <span className="text-xs font-bold text-slate-900 uppercase tracking-wider font-sans">
-                  Locations & Zones
+                  Swim Lanes
                 </span>
               </div>
               <button
                 type="button"
                 onClick={onAddLane}
                 className="p-1 rounded bg-white hover:bg-slate-200 text-[#0066B3] hover:text-[#001430] border border-slate-300 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                title="Add new swimlane / location"
+                title="Add new swim lane"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Zone</span>
+                <span>Lane</span>
               </button>
             </div>
 
-            {/* Time Columns Header: ONLY Day of Week & Date */}
+            {/* Time Columns Header: Adaptive for Daily, Weekly, and Monthly */}
             <div className="flex bg-slate-100 relative">
               {days.map((day) => {
                 const dateStr = calculateWorkDate(project.startDate, day, project.workWeek);
@@ -421,23 +421,65 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                 const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
                 const monthDay = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
                 const isStartOfWeek = day % (project.workWeek || 5) === 1;
+                const weekNum = Math.floor((day - 1) / (project.workWeek || 5)) + 1;
 
                 return (
                   <div
                     key={day}
-                    className={`flex flex-col items-center justify-center border-r border-slate-300 py-2 select-none flex-shrink-0 transition-colors ${
-                      isStartOfWeek ? 'border-l-2 border-l-[#00A9E0] bg-slate-200/60' : 'bg-slate-100'
+                    className={`flex flex-col items-center justify-center border-r border-slate-300 py-1.5 select-none flex-shrink-0 transition-colors ${
+                      isStartOfWeek ? 'border-l-2 border-l-[#00A9E0] bg-slate-200/70' : 'bg-slate-100'
                     }`}
                     style={{ width: `${project.dayWidth}px` }}
+                    title={`Day ${day} (${dayName} ${monthDay}) - Week ${weekNum}`}
                   >
-                    <div className="flex flex-col items-center justify-center leading-tight">
-                      <span className="text-xs font-extrabold text-[#0066B3] font-sans uppercase tracking-wider">
-                        {dayName}
-                      </span>
-                      <span className="text-xs font-bold text-slate-900 font-mono">
-                        {monthDay}
-                      </span>
-                    </div>
+                    {project.dayWidth >= 110 ? (
+                      /* Daily Full View */
+                      <div className="flex flex-col items-center justify-center leading-tight">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-extrabold text-[#0066B3] font-sans uppercase tracking-wider">
+                            {dayName}
+                          </span>
+                          {isStartOfWeek && (
+                            <span className="text-[9px] font-bold bg-[#0066B3] text-white px-1 rounded-xs">
+                              W{weekNum}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 font-mono">
+                          {monthDay}
+                        </span>
+                      </div>
+                    ) : project.dayWidth >= 55 ? (
+                      /* Weekly View */
+                      <div className="flex flex-col items-center justify-center leading-tight">
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-[10px] font-extrabold text-[#0066B3] font-sans uppercase">
+                            {dayName.slice(0, 2)}
+                          </span>
+                          {isStartOfWeek && (
+                            <span className="text-[8px] font-black bg-[#0066B3] text-white px-0.5 rounded-2xs">
+                              W{weekNum}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-900 font-mono">
+                          {dateObj.getDate()}
+                        </span>
+                      </div>
+                    ) : (
+                      /* Monthly / Compressed View */
+                      <div className="flex flex-col items-center justify-center leading-tight">
+                        <span className="text-[8px] font-bold text-slate-500 font-sans uppercase">
+                          {dayName.charAt(0)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-900 font-mono">
+                          {dateObj.getDate()}
+                        </span>
+                        {isStartOfWeek && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#00A9E0] mt-0.5" title={`Week ${weekNum}`} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -482,17 +524,24 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
               const positionedTasks = layout?.positionedTasks || [];
               const isTargetLane = draggingTask?.previewLaneId === lane.id && draggingTask.hasMoved;
 
+              // Alternating swim lane colors: light grey vs crisp white for easy differentiation
+              const isEvenLane = laneIdx % 2 === 0;
+              const laneBgClass = isEvenLane ? 'bg-white' : 'bg-slate-100/70';
+              const headerBgClass = isEvenLane ? 'bg-white' : 'bg-slate-100';
+
               return (
                 <div
                   key={lane.id}
-                  className={`flex border-b-2 border-slate-200 group/lane relative bg-white transition-colors ${
-                    isTargetLane ? 'bg-blue-50/25' : ''
+                  className={`flex border-b-2 border-slate-300 group/lane relative transition-colors ${
+                    isTargetLane ? 'bg-blue-50/35' : laneBgClass
                   }`}
                   style={{ minHeight: `${laneHeight}px` }}
                 >
-                  {/* Left Sticky Lane Header */}
+                  {/* Left Sticky Lane Header with alternating background */}
                   <div
-                    className="sticky left-0 z-30 w-64 bg-slate-100 border-r-2 border-slate-300 p-3 flex flex-col justify-between flex-shrink-0"
+                    className={`sticky left-0 z-30 w-64 border-r-2 border-slate-300 p-3 flex flex-col justify-between flex-shrink-0 transition-colors shadow-xs ${
+                      headerBgClass
+                    }`}
                     style={{ minHeight: `${laneHeight}px` }}
                   >
                     <div className="space-y-1.5">
@@ -510,7 +559,7 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                           {trackCount > 1 && (
                             <span
                               className="text-[10px] font-bold bg-[#00A9E0]/15 text-[#0066B3] px-1.5 py-0.5 rounded border border-[#00A9E0]/30"
-                              title={`${trackCount} concurrent lines of work in this location`}
+                              title={`${trackCount} concurrent lines of work in this swim lane`}
                             >
                               {trackCount} Lines
                             </span>
@@ -521,7 +570,7 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                         </div>
                       </div>
 
-                      {/* LOCATION / SWIMLANE NAME */}
+                      {/* SWIM LANE NAME */}
                       <input
                         type="text"
                         value={lane.name}
@@ -529,18 +578,18 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                           onUpdateLane(lane.id, e.target.value, lane.wbsCode)
                         }
                         className="text-sm md:text-base font-bold text-slate-900 font-sans bg-transparent hover:bg-white px-1.5 py-1 rounded border border-transparent hover:border-slate-300 focus:outline-none focus:bg-white w-full tracking-tight"
-                        title="Click to rename location / swimlane"
+                        title="Click to rename swim lane"
                       />
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-xs text-slate-500 font-sans">
-                      <span>Location #{laneIdx + 1}</span>
+                      <span>Swim Lane #{laneIdx + 1}</span>
                       {project.lanes.length > 1 && (
                         <button
                           type="button"
                           onClick={() => onDeleteLane(lane.id)}
                           className="text-slate-400 hover:text-rose-600 p-0.5 rounded opacity-0 group-hover/lane:opacity-100 transition-opacity cursor-pointer"
-                          title="Delete swimlane"
+                          title="Delete swim lane"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -548,14 +597,18 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                     </div>
                   </div>
 
-                  {/* Day Grid Cells for this Swimlane */}
+                  {/* Day Grid Cells for this Swimlane with alternating background */}
                   <div
-                    className="flex relative bg-white"
+                    className={`flex relative transition-colors ${laneBgClass}`}
                     style={{ minHeight: `${laneHeight}px` }}
                   >
                     {/* Render grid vertical day lines */}
                     {days.map((day) => {
                       const isStartOfWeek = day % (project.workWeek || 5) === 1;
+                      const cellBg = isStartOfWeek
+                        ? (isEvenLane ? 'border-l-2 border-l-[#00A9E0]/40 bg-slate-100/40' : 'border-l-2 border-l-[#00A9E0]/50 bg-slate-200/50')
+                        : (isEvenLane ? 'bg-white' : 'bg-slate-100/70');
+
                       return (
                         <div
                           key={day}
@@ -564,9 +617,7 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                               onAddTaskAtCell(lane.id, day);
                             }
                           }}
-                          className={`relative border-r border-slate-200/80 p-1 transition-colors group/cell cursor-pointer ${
-                            isStartOfWeek ? 'border-l-2 border-l-[#00A9E0]/30 bg-slate-50/60' : 'bg-white'
-                          } hover:bg-[#00A9E0]/5`}
+                          className={`relative border-r border-slate-200/80 p-1 transition-colors group/cell cursor-pointer ${cellBg} hover:bg-[#00A9E0]/10`}
                           style={{
                             width: `${project.dayWidth}px`,
                             minHeight: `${laneHeight}px`,
@@ -582,7 +633,7 @@ export const PullPlanBoard: React.FC<PullPlanBoardProps> = ({
                     })}
 
                     {/* Placeholder space for extra days column */}
-                    <div className="w-16 border-r border-slate-200 bg-slate-50/40" />
+                    <div className={`w-16 border-r border-slate-200 ${isEvenLane ? 'bg-slate-50/40' : 'bg-slate-200/40'}`} />
 
                     {/* Snap Preview Box while dragging (Respects vertical slot: above, below, or between) */}
                     {isTargetLane && draggingTask && (

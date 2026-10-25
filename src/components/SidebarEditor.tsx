@@ -9,6 +9,7 @@ import {
   Diamond,
   Users,
   Clock,
+  Layers,
   MapPin,
   Briefcase,
   AlertTriangle,
@@ -169,8 +170,8 @@ export const SidebarEditor: React.FC<SidebarEditorProps> = ({
         {/* Location / Swimlane */}
         <div>
           <label className="text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
-            <MapPin className="w-4 h-4 text-[#0066B3]" />
-            Location / Swimlane
+            <Layers className="w-4 h-4 text-[#0066B3]" />
+            Swim Lane
           </label>
           <select
             value={task.laneId}

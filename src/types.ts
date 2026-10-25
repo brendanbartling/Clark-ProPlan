@@ -47,6 +47,8 @@ export interface SwimLane {
   order: number;
 }
 
+export type TimescaleMode = 'daily' | 'weekly' | 'monthly';
+
 export interface PullPlanProject {
   id: string;
   title: string;
@@ -55,8 +57,9 @@ export interface PullPlanProject {
   endDate?: string;        // YYYY-MM-DD
   targetDate?: string;     // YYYY-MM-DD (renders vertical red target line on chart)
   workWeek: 5 | 6 | 7;     // 5, 6, or 7 day work week (default 5)
+  timescale?: TimescaleMode; // 'daily' | 'weekly' | 'monthly' (default 'daily')
   totalDays: number;       // default 20-30 days
-  dayWidth: number;        // px width per day (default 140)
+  dayWidth: number;        // px width per day (default 145)
   lanes: SwimLane[];
   trades: Trade[];
   tasks: StickyNote[];

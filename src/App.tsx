@@ -12,6 +12,7 @@ import {
   SwimLane,
   DependencyType,
   Dependency,
+  TimescaleMode,
 } from './types';
 import { INITIAL_PROJECT } from './defaultData';
 import { Header } from './components/Header';
@@ -36,7 +37,7 @@ import {
 } from './utils/p6Format';
 import { generateNextTaskId } from './utils/idGenerator';
 
-const LOCAL_STORAGE_KEY = 'clark_pull_plan_project_v2';
+const LOCAL_STORAGE_KEY = 'clark_pull_plan_project_v3';
 
 /**
  * Ensures Notice to Proceed (MILE-010) on Day 1 and Substantial Completion (MILE-110) on Day totalDays
@@ -46,8 +47,10 @@ function syncMilestones(
   lanes: SwimLane[],
   totalDays: number
 ): StickyNote[] {
-  const firstLaneId = lanes[0]?.id || 'LANE-1';
-  const lastLaneId = lanes[lanes.length - 1]?.id || firstLaneId;
+  const milestoneLaneId =
+    lanes.find((l) => l.name.toLowerCase().includes('milestone'))?.id ||
+    lanes[0]?.id ||
+    'LANE-MILE';
 
   let updated = [...tasks];
 
@@ -58,6 +61,7 @@ function syncMilestones(
       ...updated[ntpIndex],
       day: 1,
       duration: 1,
+      laneId: milestoneLaneId,
       shape: 'diamond',
     };
   } else {
@@ -65,7 +69,7 @@ function syncMilestones(
       id: 'MILE-010',
       name: 'Notice to Proceed (NTP)',
       tradeId: 'TRADE-GC',
-      laneId: firstLaneId,
+      laneId: milestoneLaneId,
       day: 1,
       duration: 1,
       crewSize: 2,
@@ -82,6 +86,7 @@ function syncMilestones(
       ...updated[subIndex],
       day: totalDays,
       duration: 1,
+      laneId: milestoneLaneId,
       shape: 'diamond',
     };
   } else {
@@ -89,7 +94,7 @@ function syncMilestones(
       id: 'MILE-110',
       name: 'Substantial Completion',
       tradeId: 'TRADE-GC',
-      laneId: lastLaneId,
+      laneId: milestoneLaneId,
       day: totalDays,
       duration: 1,
       crewSize: 2,
@@ -110,6 +115,12 @@ export default function App() {
       if (savedStr) {
         const saved = JSON.parse(savedStr);
         if (saved && Array.isArray(saved.tasks)) {
+          const hasOldLanes = saved.lanes?.some(
+            (l: any) => l.name?.includes('Sector A') || l.name?.includes('Pod')
+          );
+          if (hasOldLanes) {
+            return INITIAL_PROJECT;
+          }
           const workWeek = saved.workWeek || 5;
           const trades = saved.trades.map((t: any) => ({
             ...t,
@@ -121,6 +132,7 @@ export default function App() {
           return {
             ...saved,
             workWeek,
+            timescale: saved.timescale || 'daily',
             trades,
             endDate,
             tasks,
@@ -409,6 +421,25 @@ export default function App() {
     }));
   };
 
+  const handleUpdateTimescale = (timescale: TimescaleMode) => {
+    setProject((prev) => {
+      let newDayWidth = prev.dayWidth;
+      if (timescale === 'daily') {
+        newDayWidth = 145;
+      } else if (timescale === 'weekly') {
+        newDayWidth = 72;
+      } else if (timescale === 'monthly') {
+        newDayWidth = 38;
+      }
+      return {
+        ...prev,
+        timescale,
+        dayWidth: newDayWidth,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  };
+
   // 10. Dependencies Management
   const handleAddDependency = (
     fromTaskId: string,
@@ -456,7 +487,7 @@ export default function App() {
     const newNum = project.lanes.length + 1;
     const newLane: SwimLane = {
       id: `LANE-${Date.now()}`,
-      name: `New Zone / Sector ${newNum}`,
+      name: `New Swim Lane ${newNum}`,
       wbsCode: `WBS-1.0${newNum}`,
       order: newNum,
     };
@@ -621,6 +652,7 @@ export default function App() {
         onUpdateEndDate={handleUpdateEndDate}
         onUpdateTargetDate={handleUpdateTargetDate}
         onUpdateWorkWeek={handleUpdateWorkWeek}
+        onUpdateTimescale={handleUpdateTimescale}
         onUpdateLogo={(logoUrl) => setProject((p) => ({ ...p, logoUrl }))}
         onAddStickyQuick={handleAddStickyQuick}
         onToggleAutoLink={() => setAutoLinkEnabled(!autoLinkEnabled)}

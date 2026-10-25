@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { PullPlanProject } from '../types';
+import { PullPlanProject, TimescaleMode } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import {
   FileSpreadsheet,
@@ -28,6 +28,7 @@ interface HeaderProps {
   onUpdateEndDate: (endDate: string) => void;
   onUpdateTargetDate: (targetDate: string | undefined) => void;
   onUpdateWorkWeek: (workWeek: 5 | 6 | 7) => void;
+  onUpdateTimescale: (timescale: TimescaleMode) => void;
   onUpdateLogo: (logoUrl?: string) => void;
   onAddStickyQuick: () => void;
   onToggleAutoLink: () => void;
@@ -55,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   onUpdateEndDate,
   onUpdateTargetDate,
   onUpdateWorkWeek,
+  onUpdateTimescale,
   onUpdateLogo,
   onAddStickyQuick,
   onToggleAutoLink,
@@ -188,6 +190,52 @@ export const Header: React.FC<HeaderProps> = ({
             title="7-Day Work Week (All calendar days)"
           >
             7d
+          </button>
+        </div>
+
+        {/* Timescale Selector (Daily, Weekly, Monthly) */}
+        <div
+          className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-0.5 text-xs font-bold text-slate-300"
+          title="Switch Timeline Timescale (Daily, Weekly, Monthly)"
+        >
+          <span className="px-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+            Scale:
+          </span>
+          <button
+            type="button"
+            onClick={() => onUpdateTimescale('daily')}
+            className={`px-2 py-0.5 rounded cursor-pointer transition-colors text-xs ${
+              (project.timescale || 'daily') === 'daily'
+                ? 'bg-[#00A9E0] text-white font-black shadow-xs'
+                : 'hover:text-white hover:bg-white/10'
+            }`}
+            title="Daily timescale view (Day by day)"
+          >
+            Daily
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdateTimescale('weekly')}
+            className={`px-2 py-0.5 rounded cursor-pointer transition-colors text-xs ${
+              project.timescale === 'weekly'
+                ? 'bg-[#00A9E0] text-white font-black shadow-xs'
+                : 'hover:text-white hover:bg-white/10'
+            }`}
+            title="Weekly timescale view (Work weeks)"
+          >
+            Weekly
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdateTimescale('monthly')}
+            className={`px-2 py-0.5 rounded cursor-pointer transition-colors text-xs ${
+              project.timescale === 'monthly'
+                ? 'bg-[#00A9E0] text-white font-black shadow-xs'
+                : 'hover:text-white hover:bg-white/10'
+            }`}
+            title="Monthly timescale view (Project overview)"
+          >
+            Monthly
           </button>
         </div>
 
